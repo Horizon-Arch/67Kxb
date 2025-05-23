@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Horizon Arch G-A-T</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      border: 1px solid #fff;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 20px;
+    }
+    .token-display {
+      margin: 20px 0;
+      padding: 10px;
+      border: 1px dashed #aaa;
+      font-size: 20px;
+      text-align: center;
+      word-break: break-word;
+      min-height: 28px;
+      user-select: all;
+    }
+    .button-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .btn {
+      flex: 1;
+      padding: 10px;
+      background-color: #000;
+      color: #fff;
+      border: 1px solid #fff;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 16px;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+    .btn:hover {
+      background-color: #222;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    input[type="number"], select {
+      background: #111;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 4px;
+      padding: 3px 6px;
+      margin-left: 8px;
+      width: 80px;
+      font-size: 14px;
+    }
+    input[type="checkbox"] {
+      margin-right: 6px;
+    }
+    #errorMessage {
+      color: #f44;
+      margin-top: 8px;
+      min-height: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Horizon Arch G-A-T</h1>
+    <div class="token-display" id="token">_____</div>
+
+    <div class="button-row">
+      <button class="btn" onclick="generateToken()">Сгенерировать</button>
+      <button class="btn" onclick="copyToken()">Скопировать</button>
+    </div>
+
+    <label>Длина токена:
+      <input type="number" id="length" value="5" min="1" max="100" />
+    </label>
+
+    <label><input type="checkbox" id="useUpper" checked /> Использовать заглавные (A-Z)</label>
+    <label><input type="checkbox" id="useLower" checked /> Использовать строчные (a-z)</label>
+    <label><input type="checkbox" id="useDigits" checked /> Использовать цифры (0-9)</label>
+    <label><input type="checkbox" id="useSymbols" /> Использовать спецсимволы (/, ?, !, -, =)</label>
+
+    <label>Макс. заглавных:
+      <input type="number" id="maxUpper" value="2" min="0" />
+    </label>
+    <label>Макс. цифр:
+      <input type="number" id="maxDigits" value="3" min="0" />
+    </label>
+    <label>Макс. букв (всего):
+      <input type="number" id="maxLetters" value="3" min="0" />
+    </label>
+
+    <label>Режим регистра:
+      <select id="caseMode">
+        <option value="mixed" selected>Смешанный</option>
+        <option value="lower">Только строчные</option>
+        <option value="upper">Только заглавные</option>
+      </select>
+    </label>
+    <div id="errorMessage"></div>
+  </div>
+
+  <script>
+    const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const lower = "abcdefghijklmnopqrstuvwxyz";
+    const digits = "0123456789";
+    const symbols = "=-/?!";
+
+    const lengthInput = document.getElementById("length");
+    const maxUpperInput = document.getElementById("maxUpper");
+    const maxDigitsInput = document.getElementById("maxDigits");
+    const maxLettersInput = document.getElementById("maxLetters");
+    const errorMessage = document.getElementById("errorMessage");
+
+    function adjustLimits() {
+      const length = parseInt(lengthInput.value, 10);
+      if (isNaN(length) || length < 1) return;
+
+      const useUpper = document.getElementById("useUpper").checked;
+      const useLower = document.getElementById("useLower").checked;
+      const useDigits = document.getElementById("useDigits").checked;
+      const useSymbols = document.getElementById("useSymbols").checked;
+
+      let lettersCount = Math.min(length, Math.round(length * 0.6));
+      let upperCount = Math.min(lettersCount, Math.round(length * 0.4));
+      let digitsCount = Math.min(length - lettersCount, Math.round(length * 0.4));
+
+      if (!useUpper) upperCount = 0;
+      if (!useLower && useUpper) lettersCount = upperCount;
+      else if (!useLower && !useUpper) lettersCount = 0;
+      if (!useDigits) digitsCount = 0;
+
+      maxLettersInput.value = lettersCount;
+      maxUpperInput.value = upperCount;
+      maxDigitsInput.value = digitsCount;
+
+      errorMessage.textContent = "";
+    }
+
+    function generateToken() {
+      const length = parseInt(lengthInput.value, 10);
+      if (isNaN(length) || length < 1) {
+        errorMessage.textContent = "Введите корректную длину.";
+        return;
+      }
+
+      const useUpper = document.getElementById("useUpper").checked;
+      const useLower = document.getElementById("useLower").checked;
+      const useDigits = document.getElementById("useDigits").checked;
+      const useSymbols = document.getElementById("useSymbols").checked;
+
+      let maxUpper = parseInt(maxUpperInput.value, 10);
+      let maxDigits = parseInt(maxDigitsInput.value, 10);
+      let maxLetters = parseInt(maxLettersInput.value, 10);
+
+      if (!useUpper) maxUpper = 0;
+      if (!useLower && useUpper) maxLetters = maxUpper;
+      else if (!useLower && !useUpper) maxLetters = 0;
+      if (!useDigits) maxDigits = 0;
+
+      let charPool = "";
+      if (useUpper) charPool += upper;
+      if (useLower) charPool += lower;
+      if (useDigits) charPool += digits;
+      if (useSymbols) charPool += symbols;
+
+      if (charPool.length === 0) {
+        errorMessage.textContent = "Нет доступных символов для генерации.";
+        document.getElementById("token").textContent = "Ошибка генерации";
+        return;
+      }
+
+      if (maxLetters + maxDigits > length) {
+        maxLetters = Math.min(maxLetters, length);
+        maxDigits = Math.min(maxDigits, length - maxLetters);
+      }
+
+      let token = "";
+      let attempts = 0;
+
+      while (attempts < 2000) {
+        let result = "";
+        let upperCount = 0, digitCount = 0, letterCount = 0, symbolCount = 0, consecutiveUpper = 0;
+
+        for (let i = 0; i < length; i++) {
+          let char = null;
+          let tries = 0;
+
+          while (tries < 100) {
+            const c = charPool[Math.floor(Math.random() * charPool.length)];
+
+            const isUpper = upper.includes(c);
+            const isLower = lower.includes(c);
+            const isDigit = digits.includes(c);
+            const isSymbol = symbols.includes(c);
+            const isLetter = isUpper || isLower;
+
+            if (isUpper && upperCount >= maxUpper) { tries++; continue; }
+            if (isDigit && digitCount >= maxDigits) { tries++; continue; }
+            if (isLetter && letterCount >= maxLetters) { tries++; continue; }
+
+            if (isSymbol && length <= 5 && symbolCount >= 1) { tries++; continue; }
+            if (isSymbol && length > 5 && symbolCount > Math.floor(length / 6)) { tries++; continue; }
+
+            if (isUpper) {
+              consecutiveUpper++;
+              if (consecutiveUpper > 2) { tries++; continue; }
+            } else {
+              consecutiveUpper = 0;
+            }
+
+            char = c;
+            if (isUpper) upperCount++;
+            if (isDigit) digitCount++;
+            if (isLetter) letterCount++;
+            if (isSymbol) symbolCount++;
+
+            break;
+          }
+          if (!char) break;
+          result += char;
+        }
+
+        if (result.length === length) {
+          const caseMode = document.getElementById("caseMode").value;
+          if (caseMode === "lower") result = result.toLowerCase();
+          else if (caseMode === "upper") result = result.toUpperCase();
+          token = result;
+          break;
+        }
+        attempts++;
+      }
+
+      if (!token) {
+        errorMessage.textContent = "Ошибка генерации токена, попробуйте изменить настройки.";
+        token = "Ошибка генерации";
+      } else {
+        errorMessage.textContent = "";
+      }
+
+      document.getElementById("token").textContent = token;
+    }
+
+    function copyToken() {
+      const token = document.getElementById("token").textContent;
+      if (token && token !== "Ошибка генерации") {
+        navigator.clipboard.writeText(token).then(() => {
+          alert("Скопировано в буфер обмена!");
+        });
+      }
+    }
+
+    lengthInput.addEventListener("input", () => {
+      adjustLimits();
+      generateToken();
+    });
+
+    document.getElementById("useUpper").addEventListener("change", () => {
+      adjustLimits();
+      generateToken();
+    });
+    document.getElementById("useLower").addEventListener("change", () => {
+      adjustLimits();
+      generateToken();
+    });
+    document.getElementById("useDigits").addEventListener("change", () => {
+      adjustLimits();
+      generateToken();
+    });
+    document.getElementById("useSymbols").addEventListener("change", () => {
+      adjustLimits();
+      generateToken();
+    });
+
+    maxUpperInput.addEventListener("input", generateToken);
+    maxDigitsInput.addEventListener("input", generateToken);
+    maxLettersInput.addEventListener("input", generateToken);
+    document.getElementById("caseMode").addEventListener("change", generateToken);
+
+    window.onload = () => {
+      adjustLimits();
+      generateToken();
+    };
+  </script>
+</body>
+</html>
